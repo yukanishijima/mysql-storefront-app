@@ -12,22 +12,64 @@ const connection = mysql.createConnection(
   }
 );
 
+let userSku = "";
+let userQty = "";
+let stockQty = "";
+
 connection.connect(function (err) {
   if (err) throw err;
   // console.log("connected with id of " + connection.threadId);
-  console.log("\nWelcome to Bamazon!\n");
   showProducts();
-  setTimeout(takeOrder, 1000);
-  // connection.end();
 });
 
 const showProducts = () => {
   let query = "SELECT * FROM products";
   connection.query(query, function (err, res) {
     if (err) throw err;
+    console.log("\nWelcome to Bamazon!\n");
     console.table(res);
     console.log();
+    setTimeout(takeOrder, 500);
   });
+};
+
+const isValidSku = (input) => {
+  let number = parseFloat(input);
+  if (!Number.isInteger(number) || number < 1 || number > 10) {
+    return "Enter a valid SKU number!";
+  } else {
+    return true;
+  };
+};
+
+const isStockEnough = () => {
+  if (stockQty < userQty) {
+    console.log("\nSorry, insufficient quantity :(\n");
+    inquirer.prompt([
+      {
+        type: "confirm",
+        message: "Do you want to keep shopping?",
+        name: "wantToShop"
+      }
+    ]).then(function (res) {
+      switch (res.wantToShop) {
+        case true:
+          takeOrder();
+          break;
+
+        case false:
+          console.log("\nBye bye!\n");
+          process.exit();
+          break;
+      }
+    });
+
+  } else {
+    console.log("Thank you for shopping with us!");
+    //update the db
+    //once the update is complete, print the total cost
+    process.exit();
+  }
 };
 
 const takeOrder = () => {
@@ -36,25 +78,23 @@ const takeOrder = () => {
       type: "input",
       message: "What is the SKU of the product you want to buy?",
       name: "sku",
-      // validate: validateSkuFunc,
+      validate: isValidSku
     },
     {
       type: "input",
       message: "How many units do you want to buy?",
       name: "quantity",
-      // validate: validateQtyFunc,
     }
-  ]).then(function (res) {
-    console.log(res.sku, res.quantity);
+  ]).then(function (answer) {
+    userSku = answer.sku;
+    userQty = answer.quantity;
 
     //check if there's stock
-
-    //if no, print "Sorry, insufficient quantity!"
-    //inquirer "Keep shopping" or "Exit"
-
-    //if yes, update the db
-    //once the update is complete, print the total cost
-
-    process.exit();
+    let query = "SELECT stock_quantity FROM products WHERE item_id = ?";
+    connection.query(query, [answer.sku], function (err, res) {
+      if (err) throw err;
+      stockQty = res[0].stock_quantity;
+      isStockEnough();
+    });
   });
 }
