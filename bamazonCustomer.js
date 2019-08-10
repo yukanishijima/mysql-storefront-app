@@ -43,33 +43,42 @@ const isValidSku = (input) => {
 };
 
 const isStockEnough = () => {
-  if (stockQty < userQty) {
-    console.log("\nSorry, insufficient quantity :(\n");
-    inquirer.prompt([
-      {
-        type: "confirm",
-        message: "Do you want to keep shopping?",
-        name: "wantToShop"
-      }
-    ]).then(function (res) {
-      switch (res.wantToShop) {
-        case true:
-          takeOrder();
-          break;
 
-        case false:
-          console.log("\nBye bye!\n");
-          process.exit();
-          break;
-      }
-    });
+  let query = `SELECT stock_quantity FROM products WHERE ?`;
+  connection.query(query, { item_id: userSku }, function (err, res) {
+    if (err) throw err;
+    stockQty = res[0].stock_quantity;
 
-  } else {
-    console.log("Thank you for shopping with us!");
-    //update the db
-    //once the update is complete, print the total cost
-    process.exit();
-  }
+    if (stockQty < userQty) {
+      console.log("\nSorry, insufficient quantity :(\n");
+      inquirer.prompt([
+        {
+          type: "confirm",
+          message: "Do you want to keep shopping?",
+          name: "wantToShop"
+        }
+      ]).then(function (res) {
+        switch (res.wantToShop) {
+          case true:
+            takeOrder();
+            break;
+
+          case false:
+            console.log("\nBye bye!\n");
+            process.exit();
+            break;
+        }
+      });
+
+    } else {
+      console.log("We have stock!");
+      //update the db
+      updateInventory();
+      //once the update is complete, print the total cost
+      process.exit();
+    }
+
+  });
 };
 
 const takeOrder = () => {
@@ -90,11 +99,6 @@ const takeOrder = () => {
     userQty = answer.quantity;
 
     //check if there's stock
-    let query = "SELECT stock_quantity FROM products WHERE item_id = ?";
-    connection.query(query, [answer.sku], function (err, res) {
-      if (err) throw err;
-      stockQty = res[0].stock_quantity;
-      isStockEnough();
-    });
+    isStockEnough();
   });
 }
