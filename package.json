@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/yukanishijima/mysql-storefront-app#readme",
   "dependencies": {
+    "dotenv": "^8.0.0",
     "inquirer": "^6.5.0",
     "mysql": "^2.17.1"
   }
