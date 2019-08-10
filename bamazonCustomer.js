@@ -33,6 +33,26 @@ const showProducts = () => {
   });
 };
 
+const updateInventory = () => {
+  let query = connection.query(
+    `UPDATE products SET ? WHERE ?`,
+    [
+      {
+        stock_quantity: stockQty - userQty
+      },
+      {
+        item_id: userSku
+      }
+    ],
+    function (err, res) {
+      if (err) throw err;
+      console.log("Inventory Updated!");
+      console.log("Here is your order summary!");
+      //print the summary of the order!
+      process.exit();
+    });
+};
+
 const isValidSku = (input) => {
   let number = parseFloat(input);
   if (!Number.isInteger(number) || number < 1 || number > 10) {
@@ -71,13 +91,8 @@ const isStockEnough = () => {
       });
 
     } else {
-      console.log("We have stock!");
-      //update the db
       updateInventory();
-      //once the update is complete, print the total cost
-      process.exit();
     }
-
   });
 };
 
