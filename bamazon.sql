@@ -23,7 +23,14 @@ VALUE
 ("Protain Bar", "Food", 2.99, 50),
 ("Gummy Candy", "Food", 1.99, 50);
 
+CREATE TABLE summary (
+  item_id INT NOT NULL AUTO_INCREMENT,
+  product_name VARCHAR(30),
+  price DECIMAL(10,2),
+  quantity INT(10),
+  PRIMARY KEY(item_id)
+);
+
 SELECT * FROM products;
-
-
+SELECT * FROM summary;
 

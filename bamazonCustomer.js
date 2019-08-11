@@ -15,12 +15,21 @@ const connection = mysql.createConnection(
 let userSku = "";
 let userQty = "";
 let stockQty = "";
+let userOrder = "";
+let userPrice = "";
 
 connection.connect(function (err) {
   if (err) throw err;
   // console.log("connected with id of " + connection.threadId);
+  deleteSummary();
   showProducts();
 });
+
+const deleteSummary = () => {
+  connection.query(`DELETE FROM summary`, function (err, res) {
+    if (err) throw err;
+  });
+}
 
 const showProducts = () => {
   let query = "SELECT * FROM products";
@@ -33,8 +42,23 @@ const showProducts = () => {
   });
 };
 
+const showSummary = () => {
+  connection.query(
+    `SELECT * FROM summary`,
+    function (err, res) {
+      if (err) throw err;
+      console.log("Here is your order summary!");
+      console.table(res);
+      //calculate the total cost and show it here
+      console.log("Total cost is: ???");
+      process.exit();
+    }
+  );
+}
+
 const updateInventory = () => {
-  let query = connection.query(
+  //update the data
+  connection.query(
     `UPDATE products SET ? WHERE ?`,
     [
       {
@@ -46,11 +70,74 @@ const updateInventory = () => {
     ],
     function (err, res) {
       if (err) throw err;
-      console.log("Inventory Updated!");
-      console.log("Here is your order summary!");
-      //print the summary of the order!
-      process.exit();
+      // console.log("Inventory Updated!");
+      getData();
     });
+
+  //get the product name and price
+  const getData = () => {
+    connection.query(
+      `SELECT product_name, price FROM products WHERE ?`,
+      {
+        item_id: userSku
+      },
+      function (err, res) {
+        if (err) throw err;
+        userOrder = res[0].product_name;
+        userPrice = res[0].price.toFixed(2);
+        insertSummary();
+      });
+  }
+
+  // insert the data to summary table
+  const insertSummary = () => {
+    connection.query(
+      "INSERT INTO summary SET ?",
+      {
+        product_name: userOrder,
+        price: userPrice,
+        quantity: userQty
+      },
+      function (err, res) {
+        if (err) throw err;
+        // console.log("Summary Updated!");
+
+        inquirer.prompt([
+          {
+            type: "confirm",
+            message: "Keep shopping?",
+            name: "keepShopping"
+          }
+        ]).then(function (res) {
+          switch (res.keepShopping) {
+            case true:
+              takeOrder();
+              break;
+
+            case false:
+              inquirer.prompt([
+                {
+                  type: "confirm",
+                  message: "Are you sure?",
+                  name: "sure"
+                }
+              ]).then(function (res) {
+                switch (res.sure) {
+                  case true:
+                    showSummary();
+                    break;
+
+                  case false:
+                    takeOrder();
+                    break;
+                }
+              });
+              break;
+
+          };
+        });
+      });
+  }
 };
 
 const isValidSku = (input) => {
@@ -64,23 +151,25 @@ const isValidSku = (input) => {
 
 const isStockEnough = () => {
 
+  //get the stock quantity
   let query = `SELECT stock_quantity FROM products WHERE ?`;
   connection.query(query, { item_id: userSku }, function (err, res) {
     if (err) throw err;
     stockQty = res[0].stock_quantity;
 
+    //if there's not enough stock,
     if (stockQty < userQty) {
       console.log("\nSorry, insufficient quantity :(\n");
       inquirer.prompt([
         {
           type: "confirm",
-          message: "Do you want to keep shopping?",
-          name: "wantToShop"
+          message: "Keep shopping?",
+          name: "keepShopping"
         }
       ]).then(function (res) {
-        switch (res.wantToShop) {
+        switch (res.keepShopping) {
           case true:
-            takeOrder();
+            showProducts();
             break;
 
           case false:
@@ -90,6 +179,7 @@ const isStockEnough = () => {
         }
       });
 
+      //if there's enough stock,
     } else {
       updateInventory();
     }
