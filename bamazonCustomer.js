@@ -26,13 +26,14 @@ connection.connect(function (err) {
 });
 
 const deleteSummary = () => {
-  connection.query(`DELETE FROM summary`, function (err, res) {
+  let query = `DROP TABLE IF EXISTS summary`;
+  connection.query(query, function (err, res) {
     if (err) throw err;
   });
 }
 
 const showProducts = () => {
-  let query = "SELECT * FROM products";
+  let query = "SELECT item_id AS SKU, product_name AS product, price, stock_quantity AS stock FROM products";
   connection.query(query, function (err, res) {
     if (err) throw err;
     console.log("\nWelcome to Bamazon!\n");
@@ -47,11 +48,16 @@ const showSummary = () => {
     `SELECT * FROM summary`,
     function (err, res) {
       if (err) throw err;
-      console.log("Here is your order summary!");
+      console.log("\nThank you for shopping with us!\n");
       console.table(res);
-      //calculate the total cost and show it here
-      console.log("Total cost is: ???");
+
+      let totalCost = 0;
+      for (var i = 0; i < res.length; i++) {
+        totalCost = totalCost + res[i].price * res[i].quantity;
+      }
+      console.log(`Total cost is: ${totalCost}`);
       process.exit();
+
     }
   );
 }
@@ -173,8 +179,7 @@ const isStockEnough = () => {
             break;
 
           case false:
-            console.log("\nBye bye!\n");
-            process.exit();
+            showSummary();
             break;
         }
       });
