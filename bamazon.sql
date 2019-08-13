@@ -31,6 +31,13 @@ CREATE TABLE departments (
   PRIMARY KEY(department_id)
 );
 
+INSERT INTO departments (department_name, over_head_costs)
+VALUE
+("Electronics", 2000),
+("Kitchen", 1000),
+("Home", 1000),
+("Food", 1000);
+
 SELECT * FROM products;
 -- SELECT * FROM summary;
 SELECT * FROM departments;
