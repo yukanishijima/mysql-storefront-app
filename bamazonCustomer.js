@@ -22,11 +22,25 @@ connection.connect(function (err) {
   if (err) throw err;
   // console.log("connected with id of " + connection.threadId);
   deleteSummary();
+  createSummary();
   showProducts();
 });
 
 const deleteSummary = () => {
   let query = `DROP TABLE IF EXISTS summary`;
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+  });
+}
+
+const createSummary = () => {
+  let query = `CREATE TABLE IF NOT EXISTS summary (
+    item_id INT NOT NULL AUTO_INCREMENT,
+    product_name VARCHAR(30),
+    price DECIMAL(10,2),
+    quantity INT(10),
+    PRIMARY KEY(item_id)
+  )`;
   connection.query(query, function (err, res) {
     if (err) throw err;
   });
