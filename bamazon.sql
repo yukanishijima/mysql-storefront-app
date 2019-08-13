@@ -8,6 +8,7 @@ CREATE TABLE products (
   department_name VARCHAR(30),
   price DECIMAL(10,2),
   stock_quantity INT(10),
+  product_sales DECIMAL(10,2),
   PRIMARY KEY(item_id)
 );
 INSERT INTO products (product_name, department_name, price, stock_quantity)
@@ -23,6 +24,14 @@ VALUE
 ("Protain Bar", "Food", 2.99, 50),
 ("Gummy Candy", "Food", 1.99, 50);
 
+CREATE TABLE departments (
+  department_id INT NOT NULL AUTO_INCREMENT,
+  department_name VARCHAR(30),
+  over_head_costs DECIMAL(10,2),
+  PRIMARY KEY(department_id)
+);
+
 SELECT * FROM products;
-SELECT * FROM summary;
+-- SELECT * FROM summary;
+SELECT * FROM departments;
 

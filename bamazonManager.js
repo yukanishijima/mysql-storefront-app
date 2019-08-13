@@ -27,12 +27,12 @@ const askQuestion = () => {
   inquirer.prompt([
     {
       type: "list",
-      message: "Select a task!",
+      message: "Select option!",
       choices: ["View Products for Sale", "View Low Inventory", "Add to Inventory", "Add New Product", "Exit"],
-      name: "tasks"
+      name: "option"
     }
   ]).then(function (answers) {
-    switch (answers.tasks) {
+    switch (answers.option) {
       case "View Products for Sale":
         viewProducts();
         break;
@@ -53,6 +53,7 @@ const askQuestion = () => {
         console.log("\nBye bye!\n");
         process.exit();
         connection.end();
+        break;
     }
   });
 }

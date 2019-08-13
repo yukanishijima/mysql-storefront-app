@@ -60,7 +60,7 @@ const showProducts = () => {
 
 const showSummary = () => {
   connection.query(
-    `SELECT * FROM summary`,
+    `SELECT item_id AS SKU, product_name AS product, price, quantity FROM summary`,
     function (err, res) {
       if (err) throw err;
       console.log("\nThank you for shopping with us!\n");
@@ -70,7 +70,7 @@ const showSummary = () => {
       for (var i = 0; i < res.length; i++) {
         totalCost = totalCost + res[i].price * res[i].quantity;
       }
-      console.log(`Total cost is: ${totalCost}`);
+      console.log(`\nTotal cost is: $ ${totalCost}\n`);
       process.exit();
       connection.end();
     }
@@ -78,34 +78,37 @@ const showSummary = () => {
 }
 
 const updateInventory = () => {
-  //update the data
+
+  //get the product name and price of user's order
   connection.query(
-    `UPDATE products SET ? WHERE ?`,
-    [
-      {
-        stock_quantity: stockQty - userQty
-      },
-      {
-        item_id: userSku
-      }
-    ],
+    `SELECT product_name, price FROM products WHERE ?`,
+    {
+      item_id: userSku
+    },
     function (err, res) {
       if (err) throw err;
-      // console.log("Inventory Updated!");
-      getData();
+      userOrder = res[0].product_name;
+      userPrice = res[0].price.toFixed(2);
+      updateProducts();
     });
 
-  //get the product name and price
-  const getData = () => {
+
+  //update the data in products table
+  const updateProducts = () => {
     connection.query(
-      `SELECT product_name, price FROM products WHERE ?`,
-      {
-        item_id: userSku
-      },
+      `UPDATE products SET ? WHERE ?`,
+      [
+        {
+          stock_quantity: stockQty - userQty,
+          product_sales: userQty * userPrice
+        },
+        {
+          item_id: userSku
+        }
+      ],
       function (err, res) {
         if (err) throw err;
-        userOrder = res[0].product_name;
-        userPrice = res[0].price.toFixed(2);
+        // console.log("Inventory Updated!");
         insertSummary();
       });
   }
