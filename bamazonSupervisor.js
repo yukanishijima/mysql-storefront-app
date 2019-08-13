@@ -18,6 +18,11 @@ connection.connect(function (err) {
   askQuestion();
 });
 
+
+let newDepartment = "";
+let newCosts = "";
+
+
 const askQuestion = () => {
   inquirer.prompt([
     {
@@ -28,12 +33,12 @@ const askQuestion = () => {
     }
   ]).then(function (answers) {
     switch (answers.option) {
-      case "View Product Sales by Department":
+      case "View Sales by Department":
         viewSalesByDepartment();
         break;
 
       case "Create New Department":
-        // createDepartment();
+        createDepartment();
         break;
 
       case "Exit":
@@ -56,7 +61,7 @@ const viewSalesByDepartment = () => {
       SUM(products.product_sales) AS 'product sales',
       (SUM(products.product_sales) - departments.over_head_costs) AS 'total profit'
     FROM 
-      departments INNER JOIN products 
+      departments LEFT JOIN products 
     ON 
       departments.department_name = products.department_name
     GROUP BY 
@@ -65,6 +70,38 @@ const viewSalesByDepartment = () => {
     function (err, res) {
       if (err) throw err;
       console.table(res);
+      connection.end();
+    });
+}
+
+const createDepartment = () => {
+  inquirer.prompt([
+    {
+      type: "input",
+      message: "Deparment name?",
+      name: "newDepartment"
+    },
+    {
+      type: "input",
+      message: "Deparment over head cost?",
+      name: "newCosts"
+    }
+  ]).then(function (answers) {
+    newDepartment = answers.newDepartment;
+    newCosts = answers.newCosts;
+    insertDepartments();
+  });
+}
+
+const insertDepartments = () => {
+  connection.query(`INSERT INTO departments SET ?`,
+    {
+      department_name: newDepartment,
+      over_head_costs: newCosts
+    },
+    function (err, res) {
+      if (err) throw err;
+      console.log(`\nNew department inserted successfully!\n`);
       connection.end();
     });
 }
