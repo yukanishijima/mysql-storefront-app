@@ -21,6 +21,7 @@ connection.connect(function (err) {
 let addSku = "";
 let addQty = "";
 let stockQty = "";
+let itemId = "";
 
 const askQuestion = () => {
   inquirer.prompt([
@@ -113,7 +114,7 @@ const updateProducts = () => {
 
 const isValidSku = (input) => {
   let number = parseFloat(input);
-  if (!Number.isInteger(number) || number < 1 || number > 10) {
+  if (!Number.isInteger(number) || number < 1 || number > itemId) {
     return "Enter a valid SKU number!";
   } else {
     return true;
@@ -121,39 +122,48 @@ const isValidSku = (input) => {
 };
 
 const addInventory = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      message: "Which SKU do you want to replenish?",
-      name: "sku",
-      validate: isValidSku
-    },
-    {
-      type: "input",
-      message: "How many units do you want to add?",
-      name: "quantity"
-    }
-  ]).then(function (answers) {
-    addSku = answers.sku;
-    addQty = parseFloat(answers.quantity);
 
+  //check how many SKUs there are (for isValidSku function)
+  connection.query(`SELECT item_id FROM products`, function (err, res) {
+    itemId = res.length;
+
+    //ask questions for replenishment
     inquirer.prompt([
       {
-        type: "confirm",
-        message: `Is this correct? \nSKU to add: ${addSku} \nUnit(s) to add: ${addQty}`,
-        name: "correct"
+        type: "input",
+        message: "Which SKU do you want to replenish?",
+        name: "sku",
+        validate: isValidSku
+      },
+      {
+        type: "input",
+        message: "How many units do you want to add?",
+        name: "quantity"
       }
-    ]).then(function (answer) {
-      switch (answer.correct) {
-        case true:
-          updateProducts();
-          break;
+    ]).then(function (answers) {
+      addSku = answers.sku;
+      addQty = parseFloat(answers.quantity);
 
-        case false:
-          addInventory();
-          break;
-      }
+      inquirer.prompt([
+        {
+          type: "confirm",
+          message: `Is this correct? \nSKU to add: ${addSku} \nUnit(s) to add: ${addQty}`,
+          name: "correct"
+        }
+      ]).then(function (answer) {
+        switch (answer.correct) {
+          case true:
+            updateProducts();
+            break;
+
+          case false:
+            addInventory();
+            break;
+        }
+      });
     });
+
+
   });
 }
 

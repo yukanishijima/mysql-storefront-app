@@ -17,6 +17,7 @@ let userQty = "";
 let stockQty = "";
 let userOrder = "";
 let userPrice = "";
+let itemId = "";
 
 connection.connect(function (err) {
   if (err) throw err;
@@ -71,7 +72,7 @@ const showSummary = () => {
       }
       console.log(`Total cost is: ${totalCost}`);
       process.exit();
-
+      connection.end();
     }
   );
 }
@@ -162,7 +163,7 @@ const updateInventory = () => {
 
 const isValidSku = (input) => {
   let number = parseFloat(input);
-  if (!Number.isInteger(number) || number < 1 || number > 10) {
+  if (!Number.isInteger(number) || number < 1 || number > itemId) {
     return "Enter a valid SKU number!";
   } else {
     return true;
@@ -206,23 +207,31 @@ const isStockEnough = () => {
 };
 
 const takeOrder = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      message: "What is the SKU of the product you want to buy?",
-      name: "sku",
-      validate: isValidSku
-    },
-    {
-      type: "input",
-      message: "How many units do you want to buy?",
-      name: "quantity",
-    }
-  ]).then(function (answer) {
-    userSku = answer.sku;
-    userQty = answer.quantity;
 
-    //check if there's stock
-    isStockEnough();
+  //check how many SKUs there are (for isValidSku function)
+  connection.query(`SELECT item_id FROM products`, function (err, res) {
+    itemId = res.length;
+
+    //take user's order
+    inquirer.prompt([
+      {
+        type: "input",
+        message: "What is the SKU of the product you want to buy?",
+        name: "sku",
+        validate: isValidSku
+      },
+      {
+        type: "input",
+        message: "How many units do you want to buy?",
+        name: "quantity",
+      }
+    ]).then(function (answer) {
+      userSku = answer.sku;
+      userQty = answer.quantity;
+
+      //check if there's stock
+      isStockEnough();
+    });
+
   });
 }
