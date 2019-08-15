@@ -79,14 +79,13 @@ connection.connect(function (err) {
   // console.log("connected with id of " + connection.threadId);
   console.log("\nWelcome to Bamazon!");
   deleteSummary();
-  createSummary();
-  showProducts();
 });
 
 const deleteSummary = () => {
   let query = `DROP TABLE IF EXISTS summary`;
   connection.query(query, function (err, res) {
     if (err) throw err;
+    createSummary();
   });
 }
 
@@ -99,6 +98,7 @@ const createSummary = () => {
   )`;
   connection.query(query, function (err, res) {
     if (err) throw err;
+    showProducts();
   });
 }
 
