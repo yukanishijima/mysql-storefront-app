@@ -147,7 +147,7 @@ const viewSalesByDepartment = () => {
     function (err, res) {
       if (err) throw err;
       formatTable(res);
-      connection.end();
+      setTimeout(askQuestion, 1000);
     });
 }
 
@@ -179,6 +179,6 @@ const insertDepartments = () => {
     function (err, res) {
       if (err) throw err;
       console.log(`\nNew department inserted successfully!\n`);
-      connection.end();
+      setTimeout(askQuestion, 1000);
     });
 }
