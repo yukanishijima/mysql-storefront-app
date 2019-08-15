@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const Table = require('tty-table');
 
 const connection = mysql.createConnection(
   {
@@ -14,9 +15,85 @@ const connection = mysql.createConnection(
 
 connection.connect(function (err) {
   if (err) throw err;
-  console.log("connected with id of " + connection.threadId);
+  // console.log("connected with id of " + connection.threadId);
   askQuestion();
 });
+
+
+let formatTable = (rows) => {
+  let header = [
+    {
+      value: "department_id",
+      alias: "ID",
+      color: "yellow"
+    },
+    {
+      value: "department_name",
+      alias: "Department",
+      color: "green",
+      width: 20,
+      align: "left"
+    },
+    {
+      value: "over_head_costs",
+      alias: "Over Head Costs",
+      color: "cyan",
+      width: 20,
+      formatter: function (value) {
+        let str = "$" + value.toFixed(2);
+        return str;
+      }
+    },
+    {
+      value: "product_sales",
+      alias: "Product Sales",
+      color: "white",
+      width: 20,
+      formatter: function (value) {
+        if (typeof value === 'number') {
+          value = "$" + value.toFixed(2);
+        }
+        else {
+          value = "0";
+        }
+        return value;
+      }
+    },
+    {
+      value: "total_profit",
+      alias: "Total Profit",
+      color: "white",
+      width: 20,
+      formatter: function (value) {
+        if (typeof value === 'number') {
+          if (value < 1) {
+            value = value.toString().split("").slice(1).join("");
+            value = "-$" + parseFloat(value).toFixed(2);
+          } else {
+            value = "$" + value.toFixed(2);
+          }
+        }
+        else {
+          value = "0";
+        }
+        return value;
+      }
+    }
+  ]
+
+  var t1 = Table(header, rows, {
+    headerColor: "white",
+    borderStyle: 2,
+    borderColor: "white",
+    paddingBottom: 0,
+    headerAlign: "center",
+    color: "white",
+  });
+
+  str1 = t1.render();
+  console.log(str1);
+};
+
 
 
 let newDepartment = "";
@@ -55,11 +132,11 @@ const viewSalesByDepartment = () => {
 
   connection.query(`
     SELECT 
-      departments.department_id AS 'department ID', 
-      departments.department_name AS 'department name', 
-      departments.over_head_costs AS 'over head costs',
-      SUM(products.product_sales) AS 'product sales',
-      (SUM(products.product_sales) - departments.over_head_costs) AS 'total profit'
+      departments.department_id, 
+      departments.department_name, 
+      departments.over_head_costs,
+      SUM(products.product_sales) AS 'product_sales',
+      (SUM(products.product_sales) - departments.over_head_costs) AS 'total_profit'
     FROM 
       departments LEFT JOIN products 
     ON 
@@ -69,7 +146,7 @@ const viewSalesByDepartment = () => {
   `,
     function (err, res) {
       if (err) throw err;
-      console.table(res);
+      formatTable(res);
       connection.end();
     });
 }

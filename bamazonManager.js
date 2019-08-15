@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const Table = require('tty-table');
 
 const connection = mysql.createConnection(
   {
@@ -18,10 +19,57 @@ connection.connect(function (err) {
   askQuestion();
 });
 
+let formatTable = (rows) => {
+  let header = [
+    {
+      value: "item_id",
+      alias: "SKU",
+      color: "yellow"
+    },
+    {
+      value: "product_name",
+      alias: "Name",
+      color: "green",
+      width: 20,
+      align: "left"
+    },
+    {
+      value: "price",
+      alias: "Price ($)",
+      color: "cyan",
+      width: 20,
+      formatter: function (value) {
+        let str = "$" + value.toFixed(2);
+        return str;
+      }
+    },
+    {
+      value: "stock_quantity",
+      alias: "Stock",
+      color: "white",
+      width: 15
+    }
+  ]
+
+  var t1 = Table(header, rows, {
+    headerColor: "white",
+    borderStyle: 2,
+    borderColor: "white",
+    paddingBottom: 0,
+    headerAlign: "center",
+    color: "white",
+  });
+
+  str1 = t1.render();
+  console.log(str1);
+};
+
+
 let addSku = "";
 let addQty = "";
 let stockQty = "";
 let itemId = "";
+
 
 const askQuestion = () => {
   inquirer.prompt([
@@ -59,22 +107,22 @@ const askQuestion = () => {
 }
 
 const viewProducts = () => {
-  let query = "SELECT item_id AS SKU, product_name AS product, price, stock_quantity AS stock FROM products";
+  let query = "SELECT item_id, product_name, price, stock_quantity FROM products";
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.table(res);
+    formatTable(res);
     setTimeout(askQuestion, 1000);
   });
 }
 
 const viewLowInventory = () => {
-  let query = "SELECT item_id AS SKU, product_name AS product, price, stock_quantity AS stock FROM products WHERE stock_quantity < 5";
+  let query = "SELECT item_id, product_name, price, stock_quantity FROM products WHERE stock_quantity < 5";
   connection.query(query, function (err, res) {
     if (err) throw err;
     if (res.length === 0) {
       console.log("\nNo items are low in stock!\n");
     } else {
-      console.log(res);
+      formatTable(res);
     }
     setTimeout(askQuestion, 1000);
   });
@@ -91,7 +139,6 @@ const updateProducts = () => {
     function (err, res) {
       if (err) throw err;
       stockQty = parseFloat(res[0].stock_quantity);
-      console.log(`stock qty: ${stockQty}`);
 
       //update the products table
       connection.query(`UPDATE products SET ? WHERE ?`,

@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const Table = require('tty-table');
 
 const connection = mysql.createConnection(
   {
@@ -12,6 +13,59 @@ const connection = mysql.createConnection(
   }
 );
 
+let formatTable = (rows, val1, val2) => {
+  let header = [
+    {
+      value: "item_id",
+      alias: "SKU",
+      color: "yellow"
+    },
+    {
+      value: "product_name",
+      alias: "Name",
+      color: "green",
+      width: 20,
+      align: "left"
+    },
+    {
+      value: "price",
+      alias: "Price ($)",
+      color: "cyan",
+      width: 20,
+      formatter: function (value) {
+        let str = "$" + value.toFixed(2);
+        return str;
+      }
+    },
+    {
+      value: val1,
+      alias: val2,
+      color: "white",
+      width: 15,
+      formatter: function (value) {
+        if (typeof value !== 'number') {
+          value = "0";
+        }
+        return value;
+      }
+    }
+  ]
+
+  var t1 = Table(header, rows, {
+    headerColor: "white",
+    borderStyle: 2,
+    borderColor: "white",
+    paddingBottom: 0,
+    headerAlign: "center",
+    color: "white",
+  });
+
+  str1 = t1.render();
+  console.log(str1);
+};
+
+
+
 let userSku = "";
 let userQty = "";
 let stockQty = "";
@@ -19,9 +73,11 @@ let userOrder = "";
 let userPrice = "";
 let itemId = "";
 
+
 connection.connect(function (err) {
   if (err) throw err;
   // console.log("connected with id of " + connection.threadId);
+  console.log("\nWelcome to Bamazon!");
   deleteSummary();
   createSummary();
   showProducts();
@@ -36,11 +92,10 @@ const deleteSummary = () => {
 
 const createSummary = () => {
   let query = `CREATE TABLE IF NOT EXISTS summary (
-    item_id INT NOT NULL AUTO_INCREMENT,
+    item_id INT NOT NULL,
     product_name VARCHAR(30),
     price DECIMAL(10,2),
-    quantity INT(10),
-    PRIMARY KEY(item_id)
+    quantity INT(10)
   )`;
   connection.query(query, function (err, res) {
     if (err) throw err;
@@ -48,29 +103,30 @@ const createSummary = () => {
 }
 
 const showProducts = () => {
-  let query = "SELECT item_id AS SKU, product_name AS product, price, stock_quantity AS stock FROM products";
+  let query = "SELECT item_id, product_name, price, stock_quantity FROM products";
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("\nWelcome to Bamazon!\n");
-    console.table(res);
-    console.log();
+    formatTable(res, "stock_quantity", "Stock");
     setTimeout(takeOrder, 500);
   });
 };
 
 const showSummary = () => {
   connection.query(
-    `SELECT item_id AS SKU, product_name AS product, price, quantity FROM summary`,
+    `SELECT item_id, product_name, price, quantity FROM summary`,
     function (err, res) {
       if (err) throw err;
       console.log("\nThank you for shopping with us!\n");
-      console.table(res);
 
       let totalCost = 0;
       for (var i = 0; i < res.length; i++) {
         totalCost = totalCost + res[i].price * res[i].quantity;
       }
-      console.log(`\nTotal cost is: $ ${totalCost}\n`);
+
+      if (totalCost !== 0) {
+        formatTable(res, "quantity", "Quantity");
+        console.log(`\nTotal cost: $${totalCost.toFixed(2)}\n`);
+      }
       process.exit();
       connection.end();
     }
@@ -118,6 +174,7 @@ const updateInventory = () => {
     connection.query(
       "INSERT INTO summary SET ?",
       {
+        item_id: userSku,
         product_name: userOrder,
         price: userPrice,
         quantity: userQty
